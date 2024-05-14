@@ -13,12 +13,13 @@ def find_inventory_levels(customers, forecasted_quantities):
     return inventory_levels
 
 
-def check_urgency_degree(customer_number, inventory_levels, t, look_ahead):
+def check_urgency_degree(customer, inventory_levels, t, look_ahead):
     urgency_degree = False
-    for i in range(t, t+look_ahead):
-        if i > 14:
+    for time in range(t, t+look_ahead):
+        if time > 14:
             break
-        if inventory_levels[customer_number][i] < 0:
+        levels_condition = inventory_levels[customer.number-1][time] - customer.safety_level
+        if levels_condition < 0:
             urgency_degree = True
 
     return urgency_degree
