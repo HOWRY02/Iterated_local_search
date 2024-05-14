@@ -26,7 +26,7 @@ class ConstructionHeuristic:
                     dilivery_quantity = min(customer.capacity*(1 - temp_inventory_levels[i][t-1]/100), self.problem.vehicle_capacity)
                 route.append(customer)
             else:
-                if check_urgency_degree(i, temp_inventory_levels, t, look_ahead):
+                if check_urgency_degree(customer, temp_inventory_levels, t, look_ahead):
                     dilivery_quantity = min((customer.capacity*(1 - temp_inventory_levels[i][t-1]/100))*ratio_demand, self.problem.vehicle_capacity)
                     route.append(customer)
             return route, dilivery_quantity
