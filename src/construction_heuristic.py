@@ -7,75 +7,179 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 from src.structure import Problem, Route
-from utils.utility import find_inventory_levels, check_urgency_degree, find_logistic_ratio
+from utils.utility import find_inventory_levels, check_urgency_degree, nearest_neighbor_insertion_heuristic, find_logistic_ratio
 
 class ConstructionHeuristic:
     def __init__(self, problem: Problem):
         self.problem: Problem = problem
 
+    # def get_solution(self):
+    #     """Solution sampled from customer list, sorted by demand"""
+
+    #     def get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, customers_in_route):
+    #         dilivery_quantity = 0
+    #         levels_condition = inventory_levels[i][t] - customer.safety_level
+    #         if t == 0: current_inventory_value = inventory_levels[i][0]
+    #         else: current_inventory_value = inventory_levels[i][t-1]
+    #         if levels_condition < 0:
+    #             # if t == (self.problem.duration-1):
+    #             #     dilivery_quantity = min(-levels_condition/100*customer.capacity, self.problem.vehicle_capacity)
+    #             # else:
+    #             dilivery_quantity = min(customer.capacity*(1 - current_inventory_value/100), self.problem.vehicle_capacity)
+    #             customers_in_route.append(customer)
+    #         else:
+    #             urgency_degree = check_urgency_degree(customer, inventory_levels, t, i, look_ahead)
+    #             # print(urgency_degree)
+                
+    #             if urgency_degree:
+    #                 # print(current_inventory_value)
+    #                 dilivery_quantity = min((customer.capacity*(1 - current_inventory_value/100))*ratio_demand, self.problem.vehicle_capacity)
+    #                 customers_in_route.append(customer)
+    #         return customers_in_route, dilivery_quantity
+
+
+    #     logistic_ratio_min = 1000000000
+    #     ratio_demand = 1.0
+    #     while ratio_demand > 0:
+    #         look_ahead = 1
+    #         while look_ahead <= (self.problem.duration/2):
+    #             dilivery_quantities = np.zeros_like(self.problem.forecasted_quantities)
+    #             inventory_levels = find_inventory_levels(self.problem.customers,
+    #                                                      self.problem.forecasted_quantities,
+    #                                                      dilivery_quantities)
+    #             solution = []
+    #             for t in range(self.problem.duration):
+    #                 C_day = []
+    #                 C_night = []
+    #                 for i, customer in enumerate(self.problem.customers):
+    #                     dilivery_quantity = 0
+    #                     if customer.time_window == 'night':
+    #                         C_night, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, C_night)
+    #                     else:
+    #                         C_day, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, C_day)
+
+    #                     dilivery_quantities[i][t] = dilivery_quantity
+
+    #                 t_dilivery_quantities = list(zip(*dilivery_quantities))[t]
+
+    #                 routes = []
+    #                 routes_day = nearest_neighbor_insertion_heuristic(C_day, t_dilivery_quantities, self.problem.vehicle_capacity)
+    #                 routes_night = nearest_neighbor_insertion_heuristic(C_night, t_dilivery_quantities, self.problem.vehicle_capacity)
+
+    #                 for route in [*routes_day, *routes_night]:
+    #                     routes.append(Route(self.problem, route, t_dilivery_quantities))
+
+    #                 solution.append(routes)
+                    
+    #                 # update inventory levels
+    #                 inventory_levels = find_inventory_levels(self.problem.customers,
+    #                                                          self.problem.forecasted_quantities,
+    #                                                          dilivery_quantities)
+
+    #             logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
+    #             if logistic_ratio < logistic_ratio_min:
+    #                 logistic_ratio_min = logistic_ratio
+    #                 best_solution = solution
+    #                 best_dilivery_quantities = dilivery_quantities
+    #                 best_look_ahead = look_ahead
+    #                 best_ratio_demand = ratio_demand
+
+    #             look_ahead += 1
+    #         ratio_demand = round(ratio_demand - 0.1, 1)
+
+    #     return best_solution, best_dilivery_quantities, best_look_ahead, best_ratio_demand
+
+
+
     def get_solution(self):
         """Solution sampled from customer list, sorted by demand"""
 
-        def get_appropriate_route(ratio_demand, look_ahead, t, i, temp_inventory_levels, customer, route):
+        def get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, customers_in_route):
             dilivery_quantity = 0
-            levels_condition = temp_inventory_levels[i][t] - customer.safety_level
+            levels_condition = inventory_levels[i][t] - customer.safety_level
+            if t == 0: current_inventory_value = inventory_levels[i][0]
+            else: current_inventory_value = inventory_levels[i][t-1]
             if levels_condition < 0:
                 if t == (self.problem.duration-1):
                     dilivery_quantity = min(-levels_condition/100*customer.capacity, self.problem.vehicle_capacity)
                 else:
-                    dilivery_quantity = min(customer.capacity*(1 - temp_inventory_levels[i][t-1]/100), self.problem.vehicle_capacity)
-                route.append(customer)
+                    dilivery_quantity = min(customer.capacity*(1 - current_inventory_value/100), self.problem.vehicle_capacity)
+                customers_in_route.append(customer)
             else:
-                if check_urgency_degree(customer, temp_inventory_levels, t, look_ahead):
-                    dilivery_quantity = min((customer.capacity*(1 - temp_inventory_levels[i][t-1]/100))*ratio_demand, self.problem.vehicle_capacity)
-                    route.append(customer)
-            return route, dilivery_quantity
+                urgency_degree = check_urgency_degree(customer, inventory_levels, t, i, look_ahead)
+                print(urgency_degree)
+                
+                if urgency_degree:
+                    print(current_inventory_value)
+                    dilivery_quantity = min((customer.capacity*(1 - current_inventory_value/100))*ratio_demand, self.problem.vehicle_capacity)
+                    customers_in_route.append(customer)
+            return customers_in_route, dilivery_quantity
 
         solution_list = []
         logistic_ratio_list = []
+        logistic_ratio_min = 1000000000
         ratio_demand = 1.0
-        while ratio_demand > 0:
-            look_ahead = 1
-            while look_ahead <= (self.problem.duration/2):
-                inventory_levels = find_inventory_levels(self.problem.customers,
-                                                         self.problem.forecasted_quantities)
+        # while ratio_demand > 0:
+        look_ahead = 1
+            # while look_ahead <= (self.problem.duration/2):
+        dilivery_quantities = np.zeros_like(self.problem.forecasted_quantities)
+        inventory_levels = find_inventory_levels(self.problem.customers,
+                                                self.problem.forecasted_quantities,
+                                                dilivery_quantities)
+        
+        solution = []
+        for t in range(0, self.problem.duration):
+            print(inventory_levels)
+            print(t)
+            
+            # print(dilivery_quantities)
 
-                temp_forecasted_quantities = self.problem.forecasted_quantities.copy()
-                dilivery_quantities = np.zeros_like(temp_forecasted_quantities)
-                solution = []
-                for t in range(0, self.problem.duration):
-                    route_day = []
-                    route_night = []
-                    for i, customer in enumerate(self.problem.customers):
-                        dilivery_quantity = 0
-                        if customer.time_window == 'night':
-                            route_night, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, route_night)
-                        else:
-                            route_day, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, route_day)
+            C_day = []
+            C_night = []
+            for i, customer in enumerate(self.problem.customers):
+                dilivery_quantity = 0
+                if customer.time_window == 'night':
+                    C_night, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, C_night)
+                else:
+                    C_day, dilivery_quantity = get_appropriate_route(ratio_demand, look_ahead, t, i, inventory_levels, customer, C_day)
 
-                        if dilivery_quantity != 0:
-                            dilivery_quantities[i][t] = dilivery_quantity
-                            temp_forecasted_quantities[i][t] -= dilivery_quantity
+                dilivery_quantities[i][t] = dilivery_quantity
 
-                    t_dilivery_quantities = list(zip(*dilivery_quantities))[t]
-                    solution.append([Route(self.problem, route_day, t_dilivery_quantities),
-                                     Route(self.problem, route_night, t_dilivery_quantities)])
-                    
-                    # update inventory levels
-                    inventory_levels = find_inventory_levels(self.problem.customers,
-                                                             temp_forecasted_quantities)
+            t_dilivery_quantities = list(zip(*dilivery_quantities))[t]
 
-                solution_list.append(solution)
-                logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
-                logistic_ratio_list.append(logistic_ratio)
+            routes = []
+            routes_day = nearest_neighbor_insertion_heuristic(C_day, t_dilivery_quantities, self.problem.vehicle_capacity)
+            routes_night = nearest_neighbor_insertion_heuristic(C_night, t_dilivery_quantities, self.problem.vehicle_capacity)
 
-                look_ahead += 1
-            ratio_demand = round(ratio_demand - 0.1, 1)
+            for route in [*routes_day, *routes_night]:
+                routes.append(Route(self.problem, route, t_dilivery_quantities))
 
-        best_logistic_ratio = min(logistic_ratio_list)
-        best_solution = solution_list[logistic_ratio_list.index(best_logistic_ratio)]
+            solution.append(routes)
+            
+            # update inventory levels
+            inventory_levels = find_inventory_levels(self.problem.customers,
+                                                    self.problem.forecasted_quantities,
+                                                    dilivery_quantities)
+            print("----------------------------")
 
-        return best_solution
+        # solution_list.append(solution)
+        # logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
+        # logistic_ratio_list.append(logistic_ratio)
+        logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
+        if logistic_ratio < logistic_ratio_min:
+            logistic_ratio_min = logistic_ratio
+            best_solution = solution
+            best_dilivery_quantities = dilivery_quantities
+            best_look_ahead = look_ahead
+            best_ratio_demand = ratio_demand
+
+            #     look_ahead += 1
+            # ratio_demand = round(ratio_demand - 0.1, 1)
+
+        # best_logistic_ratio = min(logistic_ratio_list)
+        # best_solution = solution_list[logistic_ratio_list.index(best_logistic_ratio)]
+
+        return best_solution, best_dilivery_quantities, best_look_ahead, best_ratio_demand
 
 
 def two_opt(a, i, j):

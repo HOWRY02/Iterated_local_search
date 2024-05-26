@@ -16,7 +16,7 @@ if __name__ == '__main__':
     forecasted_quantity_df = pd.read_csv(forecasted_quantity_sheet_url)
     
     problem = FormatParser(customers_df, forecasted_quantity_df).get_problem()
-    solution = ConstructionHeuristic(problem).get_solution()
+    solution, dilivery_quantities, look_ahead, ratio_demand = ConstructionHeuristic(problem).get_solution()
 
     logistic_ratio, [setup_cost, delivery_cost, delivered_quantity_list, distance_list] = find_logistic_ratio(problem, solution)
     
@@ -24,5 +24,7 @@ if __name__ == '__main__':
     print("Logistic ratio: ", logistic_ratio)
     print("Setup cost: ", setup_cost)
     print("Travelling cost: ", delivery_cost)
-    print("Total transportation quantity [day, night]: ", sum(delivered_quantity_list))
-    print("Total transportation distance [day, night]: ", sum(distance_list))
+    print("Dilivery quantities: \n", dilivery_quantities)
+    print("Look ahead - ratio demand: ", look_ahead, ratio_demand)
+    print("Total transportation quantity [day, night]: ", delivered_quantity_list)
+    # print("Total transportation distance [day, night]: ", distance_list)
