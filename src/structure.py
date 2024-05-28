@@ -42,17 +42,19 @@ class Problem:
 
         self.customers = list(filter(lambda x: x.number != 0, customers))
         self.forecasted_quantities = forecasted_quantities
+        self.dilivery_quantities = np.zeros_like(forecasted_quantities)
         self.depot: Customer = list(filter(lambda x: x.number == 0, customers))[0]
         self.depot.is_serviced = True
 
     def __repr__(self):
         return f"Vehicle capacity: {self.vehicle_capacity}\n"
 
-    def obj_func(self, routes):
-        return sum(map(lambda x: x.total_distance, routes))
+    def obj_func(self, solution):
+        return sum(map(lambda routes: sum([route.total_distance for route in routes]), solution))
 
-    def print_canonical(self, routes):
-        return "\n".join(list(map(lambda x: x.canonical_view, routes)))
+    def print_canonical(self, solution):
+        # return "\n".join(list(map(lambda routes: (route.canonical_view for route in routes), solution)))
+        return "\n".join(list(map(lambda routes: ' -- '.join(route.canonical_view for route in routes), solution)))
     
     @property
     def duration(self):
@@ -60,29 +62,26 @@ class Problem:
 
 
 class Route:
-    def __init__(self, problem: Problem, customers: list, dilivery_quantities):
+    def __init__(self, problem: Problem, customers: list, t_dilivery_quantities):
         self.problem: Problem = problem
         self._customers: list = [self.problem.depot, *customers, self.problem.depot]
-        self._dilivery_quantities = dilivery_quantities
+        self.t_dilivery_quantities: list = t_dilivery_quantities
 
     def __repr__(self):
         return " ".join(str(customer.number) for customer in self._customers)
 
-    # @property
-    # def canonical_view(self):
-    #     time = 0
-    #     result = [0, 0.0]
-    #     for source, target in zip(self._customers, self._customers[1:]):
-    #         start_time = max([target.ready_time, time + source.distance(target)])
-    #         time = start_time + target.service_time
-    #         result.append(target.number)
-    #         result.append(start_time)
-    #     return " ".join(str(x) for x in result)
+    @property
+    def canonical_view(self):
+        distance = 0
+        result = [0, 0.0]
+        for source, target in zip(self._customers, self._customers[1:]):
+            # start_time = max([target.ready_time, time + source.distance(target)])
+            # time = start_time + target.service_time
+            distance += source.distance(target)
+            result.append(target.number)
+            result.append(distance)
 
-    # @property
-    # def dilivery_quantities(self):
-    #         self._dilivery_quantities
-    #     return 
+        return " ".join(str(x) for x in result)
 
     @property
     def customers(self):
@@ -105,24 +104,23 @@ class Route:
         '''
         total_quantity = 0
         for customer in self.customers:
-            total_quantity += self._dilivery_quantities[customer.number-1]
+            total_quantity += self.t_dilivery_quantities[customer.number-1]
         return total_quantity
 
-    # @property
-    # def edges(self):
-    #     return list(zip(self._customers, self._customers[1:]))
+    @property
+    def edges(self):
+        return list(zip(self._customers, self._customers[1:]))
 
-    # @property
-    # def is_feasible(self):
-    #     time = 0
-    #     capacity = self.problem.vehicle_capacity
-    #     is_feasible = True
-    #     for source, target in zip(self._customers, self._customers[1:]):
-    #         start_service_time = max([target.ready_time, time + source.distance(target)])
-    #         if start_service_time >= target.due_date:
-    #             is_feasible = False
-    #         time = start_service_time + target.service_time
-    #         capacity -= target.demand
-    #     if time >= self.problem.depot.due_date or capacity < 0:
-    #         is_feasible = False
-    #     return is_feasible
+    @property
+    def is_feasible(self):
+        capacity = self.problem.vehicle_capacity
+        is_feasible = True
+        for source, target in zip(self.customers, self.customers[1:]):
+            if source.time_window != target.time_window:
+                is_feasible = False
+                break
+
+        if self.total_quantity > capacity:
+            is_feasible = False
+
+        return is_feasible

@@ -1,6 +1,6 @@
 import pandas as pd
 from src.format_parser import FormatParser
-from src.construction_heuristic import IteratedLocalSearch, ConstructionHeuristic
+from src.construction_heuristic import IteratedLocalSearch
 from utils.utility import find_logistic_ratio
 
 
@@ -16,15 +16,13 @@ if __name__ == '__main__':
     forecasted_quantity_df = pd.read_csv(forecasted_quantity_sheet_url)
     
     problem = FormatParser(customers_df, forecasted_quantity_df).get_problem()
-    solution, dilivery_quantities, look_ahead, ratio_demand = ConstructionHeuristic(problem).get_solution()
+    solution = IteratedLocalSearch(problem).execute()
 
     logistic_ratio, [setup_cost, delivery_cost, delivered_quantity_list, distance_list] = find_logistic_ratio(problem, solution)
     
-    print("Solution: ", solution)
+    print("Solution:\n", solution)
     print("Logistic ratio: ", logistic_ratio)
-    print("Setup cost: ", setup_cost)
-    print("Travelling cost: ", delivery_cost)
-    print("Dilivery quantities: \n", dilivery_quantities)
-    print("Look ahead - ratio demand: ", look_ahead, ratio_demand)
-    print("Total transportation quantity [day, night]: ", delivered_quantity_list)
+    # print("Setup cost: ", setup_cost)
+    # print("Travelling cost: ", delivery_cost)
+    # print("Total transportation quantity [day, night]: ", delivered_quantity_list)
     # print("Total transportation distance [day, night]: ", distance_list)
