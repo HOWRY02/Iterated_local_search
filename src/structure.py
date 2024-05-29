@@ -1,4 +1,12 @@
+import os
+import sys
 import numpy as np
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
+from src.utils.utility import find_inventory_levels
+
 
 class Customer:
     def __init__(self, customer_info):
@@ -16,9 +24,7 @@ class Customer:
     def __repr__(self):
         return f"C_{self.name}"
 
-    def distance(self, target):
-        # return math.sqrt(math.pow(self.x - target.x, 2) + math.pow(target.y - self.y, 2))
-    
+    def distance(self, target):    
         # Convert degrees to radians
         lat1, lon1, lat2, lon2 = map(np.radians, [self.x, self.y, target.x, target.y])
 
@@ -53,16 +59,20 @@ class Problem:
         return sum(map(lambda routes: sum([route.total_distance for route in routes]), solution))
 
     def print_canonical(self, solution):
-        # return "\n".join(list(map(lambda routes: (route.canonical_view for route in routes), solution)))
         return "\n".join(list(map(lambda routes: ' -- '.join(route.canonical_view for route in routes), solution)))
     
     @property
     def duration(self):
         return len(self.forecasted_quantities[0])
-
+    
+    @property
+    def inventory_levels(self):
+        return find_inventory_levels(self.customers,
+                                     self.forecasted_quantities,
+                                     self.dilivery_quantities)
 
 class Route:
-    def __init__(self, problem: Problem, customers: list, t_dilivery_quantities):
+    def __init__(self, problem: Problem, customers: list, t_dilivery_quantities: list):
         self.problem: Problem = problem
         self._customers: list = [self.problem.depot, *customers, self.problem.depot]
         self.t_dilivery_quantities: list = t_dilivery_quantities
@@ -75,8 +85,6 @@ class Route:
         distance = 0
         result = [0, 0.0]
         for source, target in zip(self._customers, self._customers[1:]):
-            # start_time = max([target.ready_time, time + source.distance(target)])
-            # time = start_time + target.service_time
             distance += source.distance(target)
             result.append(target.number)
             result.append(distance)
