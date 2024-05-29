@@ -1,24 +1,13 @@
 import numpy as np
 
 
-# def find_inventory_levels(customers, forecasted_quantities, dilivery_quantities):
-#     inventory_levels = np.zeros_like(forecasted_quantities)
-#     for i, forecasted_quantity in enumerate(forecasted_quantities):
-#         current_value = customers[i].init_quantity
-#         scaling_factor = 100 / customers[i].capacity
-#         for j, value in enumerate(forecasted_quantity):
-#             current_value -= scaling_factor*(value - dilivery_quantities[i][j-1])
-#             inventory_levels[i][j] = round(current_value,0)
-
-#     return inventory_levels
-
 def find_inventory_levels(customers, forecasted_quantities, dilivery_quantities):
     inventory_levels = np.zeros_like(forecasted_quantities)
     for i in range(len(forecasted_quantities)):
         current_value = customers[i].init_quantity
         scaling_factor = 100 / customers[i].capacity
         for t in range(len(forecasted_quantities[0])):
-            current_value -= scaling_factor*(forecasted_quantities[i][t] - dilivery_quantities[i][t-1])
+            current_value -= scaling_factor*(forecasted_quantities[i][t] - dilivery_quantities[i][t])
             inventory_levels[i][t] = round(current_value,0)
 
     return inventory_levels
