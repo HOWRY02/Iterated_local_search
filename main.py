@@ -1,7 +1,7 @@
 import pandas as pd
 from src.format_parser import FormatParser
 from src.construction_heuristic import IteratedLocalSearch
-from utils.utility import find_logistic_ratio
+from src.utils.utility import find_logistic_ratio
 
 
 if __name__ == '__main__':
@@ -19,9 +19,11 @@ if __name__ == '__main__':
     solution = IteratedLocalSearch(problem).execute()
 
     logistic_ratio, [setup_cost, delivery_cost, delivered_quantity_list, distance_list] = find_logistic_ratio(problem, solution)
-    
-    print("Solution:\n", solution)
-    print("Logistic ratio: ", logistic_ratio)
+
+    # print("Best solution:\n", solution)
+    # print("Logistic ratio: ", logistic_ratio)
+    # print("Dilivery quantities:\n", problem.dilivery_quantities)
+    # print("Inventory levels:\n", problem.inventory_levels)
     # print("Setup cost: ", setup_cost)
     # print("Travelling cost: ", delivery_cost)
     # print("Total transportation quantity [day, night]: ", delivered_quantity_list)
