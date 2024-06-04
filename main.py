@@ -15,8 +15,8 @@ if __name__ == '__main__':
     customers_df = pd.read_csv(customers_sheet_url)
     forecasted_quantity_df = pd.read_csv(forecasted_quantity_sheet_url)
     
-    problem = FormatParser(customers_df, forecasted_quantity_df).get_problem()
-    solution = IteratedLocalSearch(problem).execute()
+    raw_problem = FormatParser(customers_df, forecasted_quantity_df).get_problem()
+    problem, solution = IteratedLocalSearch(raw_problem).execute()
 
     logistic_ratio, [setup_cost, delivery_cost, delivered_quantity_list, distance_list] = find_logistic_ratio(problem, solution)
 
