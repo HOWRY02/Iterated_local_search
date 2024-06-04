@@ -97,21 +97,22 @@ def or_opt(problem, solution):
     transfers k adjacent customers from their current 
     position to another position in the same route
     '''
-    new_solution = list(solution)
-    for t in range(len(solution)):
-        t_dilivery_quantities = list(zip(*problem.dilivery_quantities))[t]
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(new_solution)):
+        t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
         for i, route in enumerate(new_solution[t]):
             is_stucked = False
             while not is_stucked:
                 is_stucked = True
                 for k, l in itertools.combinations(range(len(route.customers)), 2):
-                    new_route = Route(problem, raw_or_opt(route.customers, k, l), t_dilivery_quantities)
+                    new_route = Route(new_problem, raw_or_opt(route.customers, k, l), t_dilivery_quantities)
                     if new_route.is_feasible:
                         if new_route.total_distance < new_solution[t][i].total_distance:
                             new_solution[t][i] = new_route
                             is_stucked = False
 
-    return new_solution
+    return new_problem, new_solution
 
 
 def raw_swap(a, b, i, j, num_customer_swap=1):
@@ -133,9 +134,10 @@ def raw_swap(a, b, i, j, num_customer_swap=1):
 
 
 def swap(problem, solution):
-    new_solution = list(solution)
-    for t in range(len(solution)):
-        t_dilivery_quantities = list(zip(*problem.dilivery_quantities))[t]
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(new_solution)):
+        t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
         is_stucked = False
         while not is_stucked:
             is_stucked = True
@@ -147,27 +149,15 @@ def swap(problem, solution):
                         if c1 is None:
                             break
 
-                        r1, r2 = Route(problem, c1, t_dilivery_quantities), Route(problem, c2, t_dilivery_quantities)
+                        r1, r2 = Route(new_problem, c1, t_dilivery_quantities), Route(new_problem, c2, t_dilivery_quantities)
                         if r1.is_feasible and r2.is_feasible:
                             if r1.total_distance + r2.total_distance < new_solution[t][i].total_distance + new_solution[t][j].total_distance:
                                 new_solution[t][i] = r1
                                 new_solution[t][j] = r2
                                 is_stucked = False
 
-    return new_solution
+    return new_problem, new_solution
 
-
-# def raw_shift(a, b, i):
-#     if len(b) - 1 - i >= 0:
-#         j = i
-#     else:
-#         j = i - len(b)
-#         a, b = b, a
-
-#     a = a + b[:j+1]
-#     b = b[j+1:]
-
-#     return a, b
 
 def raw_shift(a, b, i, j=1):
     if len(b) - 1 - i < 0:
@@ -184,9 +174,10 @@ def raw_shift(a, b, i, j=1):
 
 
 def shift(problem, solution):
-    new_solution = list(solution)
-    for t in range(len(solution)):
-        t_dilivery_quantities = list(zip(*problem.dilivery_quantities))[t]
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(new_solution)):
+        t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
         is_stucked = False
         while not is_stucked:
             is_stucked = True
@@ -200,7 +191,7 @@ def shift(problem, solution):
                         if c1 is None:
                             break
 
-                        r1, r2 = Route(problem, c1, t_dilivery_quantities), Route(problem, c2, t_dilivery_quantities)
+                        r1, r2 = Route(new_problem, c1, t_dilivery_quantities), Route(new_problem, c2, t_dilivery_quantities)
                         if r1.is_feasible and r2.is_feasible:
                             if r1.total_distance + r2.total_distance < new_solution[t][i].total_distance + new_solution[t][j].total_distance:
                                 if c1 and c2:
@@ -225,7 +216,7 @@ def shift(problem, solution):
                 if is_break:
                     break
 
-    return new_solution
+    return new_problem, new_solution
 
 
 def raw_transfer(problem, solution, t, route, i, j):
@@ -253,43 +244,48 @@ def raw_transfer(problem, solution, t, route, i, j):
 
 
 def transfer(problem, solution):
-    new_solution = list(solution)
-    for t in range(len(solution)):
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(new_solution)):
         is_stucked = False
         while not is_stucked:
             is_stucked = True
-            for route in new_solution[t]:
-                for i, customer in enumerate(route.customers):
+            # for route in new_solution[t]:
+            for i in range(len(new_solution[t])):
+                for j, customer in enumerate(new_solution[t][i].customers):
+                # for i, customer in enumerate(route.customers):
                     is_break = False
 
-                    if t > 0 and t < problem.duration-1:
-                        for j in range(len(new_solution[t-1])+len(new_solution[t+1])-1):
-                            c1, c2, time_period_2, idx, t_dq_1, t_dq_2 = raw_transfer(problem, new_solution, t, route, i, j)
+                    if t > 0 and t < new_problem.duration-1:
+                        for k in range(len(new_solution[t-1])+len(new_solution[t+1])-1):
+                            c1, c2, time_period_2, idx, t_dq_1, t_dq_2 = raw_transfer(new_problem, new_solution, t, new_solution[t][i], j, k)
 
                             if c1 is None:
                                 break
 
-                            r1, r2 = Route(problem, c1, t_dq_1), Route(problem, c2, t_dq_2)
+                            r1, r2 = Route(new_problem, c1, t_dq_1), Route(new_problem, c2, t_dq_2)
                             
                             if r1.is_feasible and r2.is_feasible:
                                 if c1 and c2:
-                                    problem.dilivery_quantities[t][customer.number-1] = t_dq_1[customer.number-1]
-                                    problem.dilivery_quantities[time_period_2][customer.number-1] = t_dq_2[customer.number-1]
+                                    new_problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
+                                    new_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
                                     new_solution[t][i] = r1
                                     new_solution[time_period_2][idx] = r2
                                 elif not c1:
-                                    problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
-                                    problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
+                                    new_problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
+                                    new_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
                                     new_solution[time_period_2][idx] = r2
-                                    new_solution[t].remove(route)
+                                    new_solution[t].remove(new_solution[t][i])
                                     is_break = True
                                     break
                                 
                                 is_stucked = False
                     if is_break:
                         break
+                if is_break:
+                    break
 
-    return new_solution
+    return new_problem, new_solution
 
 
 def perturb_shift(problem, solution):
@@ -340,15 +336,16 @@ def raw_insertion(problem, solution, t, i, customer):
 
 
 def perturb_insertion(problem, solution):
-    for t in range(len(solution)):
-        min_logistic_ratio, _ = find_logistic_ratio(problem, solution)
-        new_problem = copy.deepcopy(problem)
-        new_solution = copy.deepcopy(solution)
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(new_solution)):
+        min_logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
         t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
-        customers_list = list(chain(*[route.customers for route in solution[t]]))
+        customers_list = list(chain(*[route.customers for route in new_solution[t]]))
+        customers_list_index = [customer.number for customer in customers_list]
         for i in range(len(new_solution[t])):
-            for customer in problem.customers:
-                if customer not in customers_list:
+            for customer in new_problem.customers:
+                if customer.number not in customers_list_index:
                     temp_problem = copy.deepcopy(problem)
                     temp_solution = copy.deepcopy(solution)
 
@@ -420,20 +417,20 @@ class LocalSearch:
     def __init__(self, problem: Problem):
         self.problem: Problem = problem
 
-    def optimize(self, solution: list) -> list:
-        initial_logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
+    def optimize(self, problem, solution: list) -> list:
+        initial_logistic_ratio, _ = find_logistic_ratio(problem, solution)
         set_ls_operators = [or_opt, swap, shift, transfer]
         while set_ls_operators:
             for operator in set_ls_operators:
-                new_solution = operator(self.problem, solution)
-                logistic_ratio, _ = find_logistic_ratio(self.problem, new_solution)
+                new_problem, new_solution = operator(problem, solution)
+                logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
                 if logistic_ratio < initial_logistic_ratio:
                     initial_logistic_ratio = logistic_ratio
                     set_ls_operators = [or_opt, swap, shift, transfer]
                 else:
                     set_ls_operators.remove(operator)
 
-        return new_solution
+        return new_problem, new_solution
 
 
 class IteratedLocalSearch(LocalSearch):
@@ -441,35 +438,37 @@ class IteratedLocalSearch(LocalSearch):
         super().__init__(problem)
         self.initial_solution = ConstructionHeuristic(problem).get_solution()
 
-    def perturbation(self, solution: list) -> list:
+    def perturbation(self, problem, solution: list) -> list:
         min_logistic_ratio, _ = find_logistic_ratio(self.problem, solution)
-        for func in [perturb_shift, perturb_insertion]:
+        for func in [perturb_shift, perturb_insertion, perturb_split]:
             new_problem, new_solution = func(self.problem, solution)
             logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
             if logistic_ratio < min_logistic_ratio:
                 min_logistic_ratio = logistic_ratio
-                self.problem = new_problem
+                problem = new_problem
                 solution = new_solution
 
-        return solution
+        return problem, solution
 
     def execute(self):
         logistic_ratio, _ = find_logistic_ratio(self.problem, self.initial_solution)
 
-        best_solution = self.optimize(self.initial_solution)
-        best_logistic_ratio, _ = find_logistic_ratio(self.problem, best_solution)
+        best_problem, best_solution = self.optimize(self.problem, self.initial_solution)
+        best_logistic_ratio, _ = find_logistic_ratio(best_problem, best_solution)
 
         is_stucked = False
         while not is_stucked:
             is_stucked = True
-            new_solution = self.perturbation(best_solution)
-            new_solution = self.optimize(new_solution)
-            logistic_ratio, _ = find_logistic_ratio(self.problem, new_solution)
+            new_problem, new_solution = self.perturbation(best_problem, best_solution)
+            # new_problem, new_solution = self.optimize(best_problem, best_solution)
+            new_problem, new_solution = self.optimize(new_problem, new_solution)
+            logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
             if logistic_ratio < best_logistic_ratio:
                 best_logistic_ratio = logistic_ratio
                 is_stucked = False
+                best_problem = new_problem
                 best_solution = new_solution
                 print("ILS step")
-                print(self.problem.print_canonical(best_solution))
+                print(best_solution)
 
-        return best_solution
+        return best_problem, best_solution
