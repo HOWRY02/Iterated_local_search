@@ -368,6 +368,54 @@ def perturb_insertion(problem, solution):
     return new_problem, new_solution
 
 
+def perturb_split(problem, solution):
+    new_problem = copy.deepcopy(problem)
+    new_solution = copy.deepcopy(solution)
+    for t in range(len(solution)):
+        min_logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
+        t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
+        for i in range(len(new_solution[t])):
+            for j, customer in enumerate(new_solution[t][i].customers):
+                is_break = False
+                if t > 0 and t < new_problem.duration-1:
+                    for k in range(len(new_solution[t-1])+len(new_solution[t+1])-1):
+                        temp_problem = copy.deepcopy(problem)
+                        temp_solution = copy.deepcopy(solution)
+
+                        c1, c2, time_period_2, idx, t_dq_1, t_dq_2 = raw_transfer(temp_problem, temp_solution, t, temp_solution[t][i], j, k)
+
+                        if c1 is None:
+                            break
+                    
+                        r1, r2 = Route(temp_problem, c1, t_dilivery_quantities), Route(temp_problem, c2, t_dilivery_quantities)
+
+                        if r1.is_feasible and r2.is_feasible:
+                            if c1 and c2:
+                                temp_problem.dilivery_quantities[t][customer.number-1] = t_dq_1[customer.number-1]
+                                temp_problem.dilivery_quantities[time_period_2][customer.number-1] = t_dq_2[customer.number-1]
+                                temp_solution[t][i] = r1
+                                temp_solution[time_period_2][idx] = r2
+                            elif not c1:
+                                temp_problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
+                                temp_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
+                                temp_solution[time_period_2][idx] = r2
+                                temp_solution[t].remove(temp_solution[t][i])
+
+                        temp_logistic_ratio, _ = find_logistic_ratio(temp_problem, temp_solution)
+                        if temp_logistic_ratio < min_logistic_ratio:
+                            min_logistic_ratio = temp_logistic_ratio
+                            new_problem = temp_problem
+                            new_solution = temp_solution
+                            is_break = True
+                            break
+                if is_break:
+                    break
+            if is_break:
+                break
+
+    return new_problem, new_solution
+
+
 class LocalSearch:
     def __init__(self, problem: Problem):
         self.problem: Problem = problem
