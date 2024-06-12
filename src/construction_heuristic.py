@@ -271,6 +271,7 @@ def transfer(problem, solution):
                                     new_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
                                     new_solution[t][i] = r1
                                     new_solution[time_period_2][idx] = r2
+                                    break
                                 elif not c1:
                                     new_problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
                                     new_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
