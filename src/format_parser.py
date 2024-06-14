@@ -14,7 +14,7 @@ class FormatParser:
     def get_problem(self) -> Problem:
         delivery_unit_cost = 50000          # VND/km
         setup_cost_for_one_trip = 300000    # VND/ship
-        vehicle_capacity = 30000            # kg
+        vehicle_capacity = 45000            # kg
 
         self.forecasted_quantity_df.set_index('Date', inplace=True)
         forecasted_quantity_df = self.forecasted_quantity_df.T

@@ -143,6 +143,7 @@ def swap(problem, solution):
             is_stucked = True
             for i, j in itertools.combinations(range(len(new_solution[t])), 2):
                 for k, l in itertools.product(range(len(new_solution[t][i].customers)), range(len(new_solution[t][j].customers))):
+                    is_break = False
                     for num_customer_swap in [1,2]:
                         c1, c2 = raw_swap(new_solution[t][i].customers, new_solution[t][j].customers, k, l, num_customer_swap)
 
@@ -155,6 +156,11 @@ def swap(problem, solution):
                                 new_solution[t][i] = r1
                                 new_solution[t][j] = r2
                                 is_stucked = False
+                                if num_customer_swap == 2:
+                                    is_break = True
+                                    break
+                    if is_break:
+                        break
 
     return new_problem, new_solution
 
@@ -182,10 +188,9 @@ def shift(problem, solution):
         while not is_stucked:
             is_stucked = True
             for i, j in itertools.combinations(range(len(new_solution[t])), 2):
-                # for k in range(len(new_solution[t][i].customers)+len(new_solution[t][j].customers)-1):
+                is_break = False
                 for k in range(len(new_solution[t][i].customers)+len(new_solution[t][j].customers)):
                     for l in range(1,4):
-                        is_break = False
                         c1, c2 = raw_shift(new_solution[t][i].customers, new_solution[t][j].customers, k, l)
 
                         if c1 is None:
@@ -250,12 +255,9 @@ def transfer(problem, solution):
         is_stucked = False
         while not is_stucked:
             is_stucked = True
-            # for route in new_solution[t]:
             for i in range(len(new_solution[t])):
+                is_break = False
                 for j, customer in enumerate(new_solution[t][i].customers):
-                # for i, customer in enumerate(route.customers):
-                    is_break = False
-
                     if t > 0 and t < new_problem.duration-1:
                         for k in range(len(new_solution[t-1])+len(new_solution[t+1])-1):
                             c1, c2, time_period_2, idx, t_dq_1, t_dq_2 = raw_transfer(new_problem, new_solution, t, new_solution[t][i], j, k)
@@ -271,6 +273,7 @@ def transfer(problem, solution):
                                     new_problem.dilivery_quantities[customer.number-1][time_period_2] = t_dq_2[customer.number-1]
                                     new_solution[t][i] = r1
                                     new_solution[time_period_2][idx] = r2
+                                    is_break = True
                                     break
                                 elif not c1:
                                     new_problem.dilivery_quantities[customer.number-1][t] = t_dq_1[customer.number-1]
@@ -373,8 +376,8 @@ def perturb_split(problem, solution):
         min_logistic_ratio, _ = find_logistic_ratio(new_problem, new_solution)
         t_dilivery_quantities = list(zip(*new_problem.dilivery_quantities))[t]
         for i in range(len(new_solution[t])):
+            is_break = False
             for j, customer in enumerate(new_solution[t][i].customers):
-                is_break = False
                 if t > 0 and t < new_problem.duration-1:
                     for k in range(len(new_solution[t-1])+len(new_solution[t+1])-1):
                         temp_problem = copy.deepcopy(problem)
