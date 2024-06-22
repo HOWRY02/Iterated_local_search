@@ -16,7 +16,7 @@ def find_inventory_levels(customers, forecasted_quantities, dilivery_quantities)
 def check_urgency_degree(customer, inventory_levels, t, i, look_ahead):
     urgency_degree = False
     for time in range(t+1, t+look_ahead):
-        if time > 14:
+        if time > len(inventory_levels[i])-1:
             break
         levels_condition = inventory_levels[i][time] - customer.safety_level
         # print("check_urgency_degree: ", time, levels_condition)
